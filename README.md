@@ -1,4 +1,4 @@
-Objetivo: Está é uma aplicação para realizar o gerenciamento de ferramentas e foi feita com o proposito de apresentar o desafio solicitado em entrevista.
+Objetivo: Esta é uma aplicação para realizar o gerenciamento de ferramentas e foi feita com o proposito de apresentar o desafio solicitado em entrevista.
 
 Use guide: Para usar o Vuttr temos que clonar o repositório com o seguinte comando: git clone https://github.com/phelipegomes/vuttr/
 
