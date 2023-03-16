@@ -1,23 +1,3 @@
-# Teste de prático
-
-Objetivo: Esta é uma aplicação para realizar o gerenciamento de ferramentas e foi feita com o proposito de apresentar o desafio solicitado em entrevista.
-
-Use guide: Para usar o Vuttr temos que clonar o repositório com o seguinte comando: git clone https://github.com/phelipegomes/vuttr/
-
-Com o repositório clonado, será necessário inicializar o projeto localmente e também a fake api. Para baixar basta clonar o repositorio: 
-https://github.com/sozei-ti/challenge-fake-api-master.git
-
-Após clonado, entre na pasta e execute o comando: 
-npm install
-
-use o seguinte comando para iniciar a fake api: 
-npx json-server db.json
-
-Use o comando para inicializar o projeto: 
-npm start
-
-_________________________________________________
-
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
