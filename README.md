@@ -1,5 +1,3 @@
-Demonstração do app https://drive.google.com/file/d/1AKcFqMGdnoBbEgnLm5tw6jOKmlEwCrhr/view?usp=share_link
-
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
