@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import api from './api';
+import { db } from './firebaseConfig';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 
 /* Custom SVG */
 import iconClose from './icons/Icon-Close-2px.svg';
 import iconPlus from './icons/Icon-Plus-Circle-2px.svg';
-import iconSearch from './icons/Icon-Search-2px.svg';
-
 
 /* Custom CSS */
 import './App.css';
@@ -21,7 +20,6 @@ export default function App() {
   const [toolName, setToolName] = useState('');
   const [toolLink, setToolLink] = useState('');
   const [toolDescription, setToolDescription] = useState('');
-  const [toolTags, setToolTags] = useState(["customize", "reactJS", "notchange"]);
   const [selectedTool, setSelectedTool] = useState();
 
   /* States of Modals */
@@ -30,12 +28,11 @@ export default function App() {
 
   /* States of Inputs */
   const [inputSearch, setInputSearch] = useState('');
-  const [checkbox, setCheckbox] = useState(false);
 
   /* Modal Controllers - Add Tools */
   const handleCloseModalAdd = () => {
     setShowModalAdd(false);
-    window.location.reload(false);
+    fetchTools();
   };
 
   const handleShowModalAdd = () => {
@@ -45,78 +42,76 @@ export default function App() {
   /* Modal Controllers - Remove Tools */
   const handleCloseModalRemove = () => {
     setShowModalRemove(false);
-    window.location.reload(false);
+    fetchTools();
   };
 
   const handleShowModalRemove = () => {
     setShowModalRemove(true);
   };
 
-  /* Initialization API with all items */
-  useEffect(() => {
-    api
-      .get("")
-      .then((response) => setTools(response.data))
-      .catch((err) => {
-        console.error("Failed to get API response" + err);
-      });
+  /* Fetch tools from Firestore */
+  const fetchTools = async () => {
+    try {
+      const q = query(collection(db, "tools"));
+      const querySnapshot = await getDocs(q);
+      const toolsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTools(toolsData);
+    } catch (err) {
+      console.error("Failed to get documents from Firestore", err);
+    }
+  };
 
+  useEffect(() => {
+    fetchTools();
   }, []);
 
   /* POST: Adding New Tools with modal */
-  const addTool = () => {
-    api.post("", {
-      title: toolName,
-      link: toolLink,
-      description: toolDescription,
-      tags: toolTags
+  const addTool = async () => {
+    try {
+      await addDoc(collection(db, "tools"), {
+        title: toolName,
+        link: toolLink,
+        description: toolDescription,
+      });
+      handleCloseModalAdd();
+    } catch (err) {
+      console.error("Failed to add document to Firestore", err);
     }
-    )
-  }
+  };
 
   /* DELETE: Deleting by ID Tools with confirmation modal */
-  const removeTool = (id) => {
-    api.delete(`${id}`);
-  }
-
-  /* Search Tools in API */
-  const searchTool = (input) => {
-    if (!checkbox) {
-
-      /* GET: Searching by all positions in API */
-      api
-        .get(`?q=${input}`)
-        .then((response) => setTools(response.data))
-        .catch((err) => {
-          console.error("Failed to get API response" + err);
-        });
-
-    } else {
-
-      /* GET: Searching by TAGS position in API */
-      api
-        .get(`?tags_like=${input}`)
-        .then((response) => setTools(response.data))
-        .catch((err) => {
-          console.error("Failed to get API response" + err);
-        });
+  const removeTool = async (id) => {
+    try {
+      await deleteDoc(doc(db, "tools", id));
+      handleCloseModalRemove();
+    } catch (err) {
+      console.error("Failed to delete document from Firestore", err);
     }
-  }  
+  };
 
-/* Starting Render HTML components */
+  /* Search Tools in Firestore */
+  const searchTool = async (input) => {
+    try {
+      let q;
+      q = query(collection(db, "tools"), where("title", ">=", input), where("title", "<=", input + '\uf8ff'));
+    
+      const querySnapshot = await getDocs(q);
+      const toolsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTools(toolsData);
+    } catch (err) {
+      console.error("Failed to get documents from Firestore", err);
+    }
+  };
+
   return (
-
-
     <div className="App body">
       <Container className="pt-4">
         <Row className="pt-2">
           <h1>VUTTR</h1>
         </Row>
-        
         <Row className="pt-2">
-          <h3>Very Useful Tools to Remeber</h3>
+          <h3>Very Useful Tools to Remember</h3>
         </Row>
-
         <Row className="pt-2">
           <Col sm={8} xs={8} md={8} lg={8} xl={8} xxl={8}>
             <input
@@ -124,74 +119,45 @@ export default function App() {
               type="text"
               placeholder="Enter text"
               value={inputSearch}
-              onChange={(e) => setInputSearch(e.target.value)}>
-            </input>
-
+              onChange={(e) => setInputSearch(e.target.value)}
+            />
             <span className="p-2">
               <button className="button-search" onClick={() => searchTool(inputSearch)}>Search</button>
             </span>
-
-            <div>
-            <input
-              className="checkbox-tags mt-3"
-              type="checkbox"
-              onChange={() => {
-                if (checkbox) {
-                  setCheckbox(false);
-                } else {
-                  setCheckbox(true);
-                }
-              }}>
-            </input>
-
-            <span className="p-2">Search in tags only</span>
-            </div>
           </Col>
-
           <Col sm={4} xs={4} md={4} lg={4} xl={4} xxl={4}>
-            <button className="float-end button-add" onClick={() => handleShowModalAdd()}><img className="custom-svg" src={iconPlus}/>Add</button>
+            <button className="float-end button-add" onClick={handleShowModalAdd}>
+              <img className="custom-svg" src={iconPlus} alt="Add" />Add
+            </button>
           </Col>
         </Row>
-
         <Row className="pt-5">
           <div className="list">
-
-
-            {tools.map(tools => (
-
-              <span key={tools.title} className="pt-5">
+            {tools.map(tool => (
+              <span key={tool.id} className="pt-5">
                 <div className="card-list">
-                <Row>
-                  <Col>
-                    <a href={tools.link}><h3>{tools.title}</h3></a>
-                  </Col>
-                  <Col>
-                    <span className="float-end align-text-center remove-button" onClick={() => {
-                      setSelectedTool(tools.id);
-                      handleShowModalRemove()
-                    }}><img className="custom-svg-remove" src={iconClose}/> remove
-                    </span>
-                  </Col>
-                </Row>
-
-                <div className="pb-4">
-                  {tools.description}<br />
-                  {tools.tags.map(tags => (
-                    <strong>
-                      <span key={tags}>#{tags}  &nbsp; </span>
-                    </strong>
-                  ))}
-                   </div>
+                  <Row>
+                    <Col>
+                      <a href={tool.link}><h3>{tool.title}</h3></a>
+                    </Col>
+                    <Col>
+                      <span className="float-end align-text-center remove-button" onClick={() => {
+                        setSelectedTool(tool.id);
+                        handleShowModalRemove();
+                      }}>
+                        <img className="custom-svg-remove" src={iconClose} alt="Remove" /> remove
+                      </span>
+                    </Col>
+                  </Row>
+                  <div className="pb-4">
+                    {tool.description}<br />
+                  </div>
                 </div>
               </span>
             ))}
           </div>
-          
         </Row>
-
-        {/* MODAL QUE PARA ADICIONAR FERRAMENTAS */}
-
-        <Modal show={showModalAdd} onHide={() => handleCloseModalAdd()}>
+        <Modal show={showModalAdd} onHide={handleCloseModalAdd}>
           <Modal.Header closeButton>
             <Modal.Title>+ Add new tool</Modal.Title>
           </Modal.Header>
@@ -204,7 +170,6 @@ export default function App() {
               onChange={(e) => setToolName(e.target.value)}
             />
             <br />
-
             <h6>Tool Link</h6>
             <input
               className="input-text-modal"
@@ -213,7 +178,6 @@ export default function App() {
               onChange={(e) => setToolLink(e.target.value)}
             />
             <br />
-
             <h6>Tool description</h6>
             <input
               className="input-text-modal"
@@ -221,43 +185,30 @@ export default function App() {
               value={toolDescription}
               onChange={(e) => setToolDescription(e.target.value)}
             />
-            <br />
-
-            <h6>Tags</h6>
-            <input
-              className="input-text-modal"
-              type="text"
-              value={toolTags}
-              onChange={(e) => setToolTags(e.target.value)}
-            />
-
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="primary" onClick={() => { addTool(); handleCloseModalAdd() }}>
+            <Button variant="primary" onClick={addTool}>
               Add tool
             </Button>
           </Modal.Footer>
         </Modal>
-
-        {/* MODAL QUE PARA REMOVER FERRAMENTAS */}
-
-        <Modal show={showModalRemove} onHide={() => handleCloseModalRemove()}>
+        <Modal show={showModalRemove} onHide={handleCloseModalRemove}>
           <Modal.Header closeButton>
             <Modal.Title>x Remove tool</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <h6>Are you sure you want to remove  ?</h6>
+            <h6>Are you sure you want to remove?</h6>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="primary" onClick={() => { removeTool(selectedTool); handleCloseModalRemove() }}>
+            <Button variant="primary" onClick={() => { removeTool(selectedTool); handleCloseModalRemove(); }}>
               Yes, remove
             </Button>
-            <Button variant="secondary" onClick={() => { handleCloseModalRemove() }}>
+            <Button variant="secondary" onClick={handleCloseModalRemove}>
               Cancel
             </Button>
           </Modal.Footer>
         </Modal>
       </Container>
-    </div >
+    </div>
   );
 }
